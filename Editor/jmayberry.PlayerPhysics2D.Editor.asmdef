@@ -1,0 +1,19 @@
+{
+    "name": "jmayberry.PlayerPhysics2D.Editor",
+    "rootNamespace": "jmayberry.PlayerPhysics2D.Editor",
+    "references": [
+        "jmayberry.PlayerPhysics2D",
+        "jmayberry.CustomAttributes"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

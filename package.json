@@ -1,0 +1,24 @@
+{
+	"name": "com.jmayberry.playerphysics2d",
+	"displayName": "Player Physics 2D",
+	"version": "1.0.0",
+	"unity": "2021.1",
+	"description": "A generic physics system for a 2d player controller.",
+	"keywords": [
+		"physics",
+		"utility"
+	],
+	"dependencies": {
+	},
+	"author": {
+		"name": "jmayberry",
+		"email": "joshua.mayberry1991@gmail.com"
+	},
+	"samples": [
+		{
+			"displayName": "Celeste",
+			"description": "Celeste Style Gameplay.",
+			"path": "Samples~/Celeste"
+		}
+	]
+}
