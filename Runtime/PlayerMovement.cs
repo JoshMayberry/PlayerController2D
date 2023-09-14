@@ -6,17 +6,17 @@ using jmayberry.GeneralInfrastructure;
 
 namespace jmayberry.PlayerPhysics2D {
 	/*
-     * Controls are using the new Unity Controls package.
-     * See: [How to use Unity's New INPUT System EASILY](https://www.youtube.com/watch?v=HmXU4dZbaMw)
-     */
+	 * Controls are using the new Unity Controls package.
+	 * See: [How to use Unity's New INPUT System EASILY](https://www.youtube.com/watch?v=HmXU4dZbaMw)
+	 */
 	public class PlayerMovement : PhysicsObject {
 		[InspectorRename("Debug Mode")] public bool debugging = true;
 
 		[Header("References")]
-		[SerializeField] private IInputs inputManager;
-		[SerializeField] private IAnimations animationManager;
+		[Required] [SerializeField] private PlayerInputHandler inputManager;
+		[Required] [SerializeField] private PlayerAnimationHandler animationManager;
 
-        [Header("Environment")]
+		[Header("Environment")]
 		[InspectorRename("Friction")][Range(0, 1)] public float speed_friction = 0f;
 		[InspectorRename("Drag")][Range(0, 1)] public float speed_drag = 0f;
 		[InspectorRename("Ground Check Size")] public Vector2 ground_checkSize = new Vector2(0.49f, 0.03f);
@@ -177,9 +177,29 @@ namespace jmayberry.PlayerPhysics2D {
 
 			this.run_acceleration = Mathf.Clamp(this.run_acceleration, 0.01f, this.run_max);
 			this.run_decceleration = Mathf.Clamp(this.run_decceleration, 0.01f, this.run_max);
-		}
+        }
 
-		void Start() {
+        private void OnEnable() {
+            this.inputManager.EventMove.AddListener(this.OnMove);
+            this.inputManager.EventJumpPress.AddListener(this.OnJumpPress);
+            this.inputManager.EventJumpRelease.AddListener(this.OnJumpRelease);
+            this.inputManager.EventLedgeGrabPress.AddListener(this.OnLedgeGrabPress);
+            this.inputManager.EventDashPress.AddListener(this.OnDashPress);
+            this.inputManager.EventSprintPress.AddListener(this.OnSprintPress);
+            this.inputManager.EventSprintRelease.AddListener(this.OnSprintRelease);
+        }
+
+        private void OnDisable() {
+            this.inputManager.EventMove.RemoveListener(this.OnMove);
+            this.inputManager.EventJumpPress.RemoveListener(this.OnJumpPress);
+            this.inputManager.EventJumpRelease.RemoveListener(this.OnJumpRelease);
+            this.inputManager.EventLedgeGrabPress.RemoveListener(this.OnLedgeGrabPress);
+            this.inputManager.EventDashPress.RemoveListener(this.OnDashPress);
+            this.inputManager.EventSprintPress.RemoveListener(this.OnSprintPress);
+            this.inputManager.EventSprintRelease.RemoveListener(this.OnSprintRelease);
+        }
+
+        void Start() {
 			this.dash_amountLeft = this.dash_amount;
 			this.jump_amountLeft = this.jump_amount;
 			this.stamina_amountLeft = this.stamina_amount;
@@ -218,8 +238,8 @@ namespace jmayberry.PlayerPhysics2D {
 			}
 		}
 
-		void OnMove(InputValue context) {
-			this.input_move = context.Get<Vector2>();
+		void OnMove(Vector2 input_move) {
+			this.input_move = input_move;
 		}
 
 		void OnJumpPress() {
