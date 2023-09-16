@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using jmayberry.CustomAttributes;
+using jmayberry.GeneralInfrastructure;
 
 namespace jmayberry.PlayerPhysics2D {
 	/**
@@ -69,23 +70,23 @@ namespace jmayberry.PlayerPhysics2D {
 		}
 
 		void OnTriggerEnter2D(Collider2D other) {
-			//Debug.Log(other.tag + "; " + LayerMask.LayerToName(other.gameObject.layer));
-			//if (other.tag == "Player_SubElement") {
-			//	PhysicsObject rider = other.transform.parent.gameObject.GetComponent<PhysicsObject>();
-			//	rider.is_riding = true;
-			//	rider.riding = this;
-			//	this.riders.Add(rider);
+			Debug.Log(other.tag + "; " + LayerMask.LayerToName(other.gameObject.layer));
+			if (other.tag == "Player") {
+				PhysicsObject rider = other.gameObject.GetComponent<PhysicsObject>();
+				rider.is_riding = true;
+				rider.riding = this;
+				this.riders.Add(rider);
 
-			//}
-			//else if (GameManager.instance.CheckIsGround(other)) {
-			//	this.DoNextDestination(); // Destination is unreachable, so just go to the next one
-			//	this.UpdateDirection();
-			//}
+			}
+			else if (GameManager.instance.CheckIsGround(other)) {
+				this.DoNextDestination(); // Destination is unreachable, so just go to the next one
+				this.UpdateDirection();
+			}
 		}
 
 		void OnTriggerExit2D(Collider2D other) {
-			if (other.tag == "Player_SubElement") {
-				PhysicsObject rider = other.transform.parent.gameObject.GetComponent<PhysicsObject>();
+			if (other.tag == "Player") {
+				PhysicsObject rider = other.gameObject.GetComponent<PhysicsObject>();
 				rider.is_riding = false;
 				rider.riding = null;
 				this.riders.Remove(rider);
