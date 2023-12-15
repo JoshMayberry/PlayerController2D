@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using jmayberry.CustomAttributes;
-using jmayberry.GeneralInfrastructure;
+using jmayberry.GeneralInfrastructure.Manager;
 
 namespace jmayberry.PlayerPhysics2D {
 	/**
