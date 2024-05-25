@@ -17,8 +17,8 @@ namespace jmayberry.PlayerPhysics2D {
 		[Required] [SerializeField] private PlayerAnimationHandler animationManager;
 
 		[Header("Environment")]
-		[InspectorRename("Friction")][Range(0, 1)] public float speed_friction = 0f;
-		[InspectorRename("Drag")][Range(0, 1)] public float speed_drag = 0f;
+		[InspectorRename("Friction")][Range(0, 0.25f)] public float speed_friction = 0.0f;
+		[InspectorRename("Drag")][Range(0, 0.025f)] public float speed_drag = 0f;
 		[InspectorRename("Ground Check Size")] public Vector2 ground_checkSize = new Vector2(0.49f, 0.03f);
 		[InspectorRename("Ground Check Position")][Required] public Transform ground_checkPosition;
 		[InspectorRename("Is On Ground")][Readonly] public bool is_onGround;
@@ -102,8 +102,7 @@ namespace jmayberry.PlayerPhysics2D {
 		[InspectorRename("Turn on Jump")] public bool wallJump_doTurn = false;
 		[InspectorRename("Slide Speed")][Range(0, 1)] public float run_wallSlide = 0f;
 		[InspectorRename("Slide Acceleration")][Range(0, 1)] public float run_wallSlideAcceleration = 0f;
-		[InspectorRename("Front Wall Check Position")][Required] public Transform wallFront_checkPosition;
-		[InspectorRename("Back Wall Check Position")][Required] public Transform wallBack_checkPosition;
+		[InspectorRename("Wall Check Position")][Required] public Transform wall_checkPosition;
 		[InspectorRename("Wall Check Size")] public Vector2 wall_checkSize = new Vector2(0.05f, 0.5f);
 		[InspectorRename("Is On Wall")][Readonly] public bool is_onWall;
 		[InspectorRename("Is On Left Wall")][Readonly] public bool is_onWallLeft;
@@ -163,8 +162,7 @@ namespace jmayberry.PlayerPhysics2D {
 		void OnDrawGizmos() {
 			// Gizmos.color = Color.red;
 			// Gizmos.DrawWireCube(this.ground_checkPosition.position, this.ground_checkSize);
-			// Gizmos.DrawWireCube(this.wallFront_checkPosition.position, this.wall_checkSize);
-			// Gizmos.DrawWireCube(this.wallBack_checkPosition.position, this.wall_checkSize);
+			// Gizmos.DrawWireCube(this.wall_checkPosition.position, this.wall_checkSize);
 		}
 
 		// Runs when the inspector window is updated
@@ -289,21 +287,12 @@ namespace jmayberry.PlayerPhysics2D {
 				}
 
 				if (!this.is_jumping) {
-					if (Physics2D.OverlapBox(this.wallFront_checkPosition.position, this.wall_checkSize, 0, GameManager.instance.groundLayer)) {
+					if (Physics2D.OverlapBox(this.wall_checkPosition.position, this.wall_checkSize, 0, GameManager.instance.groundLayer)) {
 						if (this.animationManager.is_facingRight) {
 							this.wallRight_lastTimer = this.gravity_coyoteTime;
 						}
 						else {
 							this.wallLeft_lastTimer = this.gravity_coyoteTime;
-						}
-					}
-
-					if (Physics2D.OverlapBox(this.wallBack_checkPosition.position, this.wall_checkSize, 0, GameManager.instance.groundLayer)) {
-						if (this.animationManager.is_facingRight) {
-							this.wallLeft_lastTimer = this.gravity_coyoteTime;
-						}
-						else {
-							this.wallRight_lastTimer = this.gravity_coyoteTime;
 						}
 					}
 
@@ -544,7 +533,7 @@ namespace jmayberry.PlayerPhysics2D {
 					amount *= this.dash_dragMultiplier;
 				}
 			}
-			else if (Mathf.Abs(this.input_move.x) < 0.01f) {
+			else if (this.animationManager.is_notMoving) {
 				amount = this.speed_friction;
 			}
 			else {

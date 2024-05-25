@@ -7,9 +7,11 @@ using jmayberry.PlayerPhysics2D;
 
 public class PlayerAnimationHandler : MonoBehaviour {
 	public PlayerInputHandler inputManager;
+	[Readonly] public bool is_movingRight = true;
 	[Readonly] public bool is_facingRight = true;
+	[Readonly] public bool is_notMoving = true;
 
-	private Animator anim;
+    private Animator anim;
 
 	void Awake() {
 		this.anim = GetComponent<Animator>();
@@ -23,18 +25,23 @@ public class PlayerAnimationHandler : MonoBehaviour {
 	}
 
 	void UpdateTurn(Vector2 input_move) {
-		if (this.is_facingRight) {
-			if (input_move.x > 0.01f) {
-				return;
-			}
-		}
-		else if (input_move.x < -0.01f) {
-			return;
-		}
+		this.is_notMoving = (Mathf.Abs(input_move.x) < 0.01f);
 
-		this.transform.rotation = Quaternion.Euler(this.transform.rotation.x, (this.is_facingRight ? 180f : 0f), this.transform.rotation.z);
-		this.is_facingRight = !this.is_facingRight;
-	}
+        if (input_move.x > 0.01f) {
+            this.is_movingRight = true;
+            if (!this.is_facingRight) {
+                this.transform.rotation = Quaternion.Euler(this.transform.rotation.x, 0f, this.transform.rotation.z);
+                this.is_facingRight = true;
+            }
+        }
+        else if (input_move.x < -0.01f) {
+            this.is_movingRight = false;
+            if (this.is_facingRight) {
+                this.transform.rotation = Quaternion.Euler(this.transform.rotation.x, 180f, this.transform.rotation.z);
+                this.is_facingRight = false;
+            }
+        }
+    }
 
 	public void TriggerLanded() {
 	}
