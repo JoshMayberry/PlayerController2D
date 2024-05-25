@@ -17,7 +17,7 @@ namespace jmayberry.PlayerPhysics2D {
 		[Required] [SerializeField] private PlayerAnimationHandler animationManager;
 
 		[Header("Environment")]
-		[InspectorRename("Friction")][Range(0, 0.25f)] public float speed_friction = 0.0f;
+		[InspectorRename("Friction")][Range(0, 0.25f)] public float speed_friction = 0.03f;
 		[InspectorRename("Drag")][Range(0, 0.025f)] public float speed_drag = 0f;
 		[InspectorRename("Ground Check Size")] public Vector2 ground_checkSize = new Vector2(0.49f, 0.03f);
 		[InspectorRename("Ground Check Position")][Required] public Transform ground_checkPosition;
@@ -28,6 +28,8 @@ namespace jmayberry.PlayerPhysics2D {
 		[InspectorRename("Fall Multiplier")][Range(0, 4)] public float gravity_fallMultiplier = 1.5f;
 		[InspectorRename("Jump Cut Multiplier")][Range(0, 4)] public float gravity_jumpCutMultiplier = 2f;
 		[InspectorRename("Dive Multiplier")][Range(0, 8)] public float gravity_diveMultiplier = 4f;
+		[InspectorRename("Dash Attack Multiplier")][Range(0, 8)] public float gravity_dashAttackMultiplier = 0f;
+		[InspectorRename("Wall Slide Multiplier")][Range(0, 8)] public float gravity_wallSlideMultiplier = 0.2f;
 		[InspectorRename("Air Time Multiplier")][Range(0, 1)] public float gravity_airTimeMultiplier = 0.5f;
 		[InspectorRename("Max Fall Speed")][Range(0, 50)] public float fallSpeed_normal = 25f;
 		[InspectorRename("Max Jump Cut Speed")][Range(0, 50)] public float fallSpeed_jumpCut = 30f;
@@ -44,6 +46,8 @@ namespace jmayberry.PlayerPhysics2D {
 		[InspectorRename("Is Fall Recovering")][Readonly] public bool is_fallRecovering;
 		[InspectorRename("Is Diving")][Readonly] public bool is_diveFalling;
 		[InspectorRename("Is Falling After a Jump")][Readonly] public bool is_jumpFalling;
+		[InspectorRename("Default Gravity Direction")] public Vector2 gravity_direction_default = Vector2.down;
+		[Readonly] public Vector2 gravity_direction;
 
 		[Header("Movement")]
 		[InspectorRename("Max Speed")][Range(0, 30)] public float run_max = 11f;
@@ -63,6 +67,13 @@ namespace jmayberry.PlayerPhysics2D {
 		[InspectorRename("Decceleration Multiplier")][Range(0, 30)] public float sprint_deccelerationMultiplier = 2f;
 		[InspectorRename("Sprint Grace")][Range(0, 0.25f)] public float sprint_graceTime = 0.1f; // How long a 'sprint button press counts for'
 		[InspectorRename("Is Sprinting")][Readonly] public bool is_sprinting;
+
+		[Header("Slopes")]
+		[InspectorRename("Max Slope Angle")][Range(0, 90)] public float slope_maxAngle = 45f;
+		[InspectorRename("Slope Detection Radius")][Range(0, 1)] public float slope_detectionRadius = 0.5f;
+		[InspectorRename("Is Sliding on Slope")][Readonly] public bool is_slope_sliding;
+		[Readonly] public Vector2 slope_normal;
+		[Readonly] public Vector2 slope_direction;
 
 		[Header("Jump")]
 		[InspectorRename("Height")][Range(0, 10)] public float jump_height = 3.5f;
@@ -151,7 +162,7 @@ namespace jmayberry.PlayerPhysics2D {
 		float fallRecover_lastTimer;
 
 		// [Readonly] public float dash_startTime;
-
+		
 		float jump_lastPressed;
 		float dash_lastPressed;
 		float ledgeGrab_lastPressed;
@@ -160,49 +171,69 @@ namespace jmayberry.PlayerPhysics2D {
 		float run_deccelerationAmount;
 
 		void OnDrawGizmos() {
-			// Gizmos.color = Color.red;
-			// Gizmos.DrawWireCube(this.ground_checkPosition.position, this.ground_checkSize);
-			// Gizmos.DrawWireCube(this.wall_checkPosition.position, this.wall_checkSize);
+			//// Visualize ground check
+			//Gizmos.color = Color.red;
+			//Gizmos.DrawWireCube(this.ground_checkPosition.position, this.ground_checkSize);
+
+			//// Visualize wall check
+			//Gizmos.color = Color.blue;
+			//Gizmos.DrawWireCube(this.wall_checkPosition.position, this.wall_checkSize);
+
+			//// Visualize slope detection
+			//Gizmos.color = Color.green;
+			//Gizmos.DrawWireSphere(this.ground_checkPosition.position, this.slopeDetectionRadius);
+
+			// Visualize slope normal
+			Gizmos.color = Color.yellow;
+			//Gizmos.DrawLine(this.ground_checkPosition.position, this.ground_checkPosition.position + (Vector3)this.slope_normal);
+			//Gizmos.DrawLine(this.ground_checkPosition.position, this.ground_checkPosition.position + (Vector3)this.slope_direction);
+			Gizmos.DrawLine(this.ground_checkPosition.position, this.ground_checkPosition.position + (Vector3)this.gravity_direction_default);
+
+			// Vizualize Gravity
+			Gizmos.color = Color.magenta;
+			Gizmos.DrawLine(this.ground_checkPosition.position, this.ground_checkPosition.position + (Vector3)this.gravity_direction);
 		}
 
 		// Runs when the inspector window is updated
 		void OnValidate() {
 			this.gravity_strength = -(2 * this.jump_height) / Mathf.Pow(this.airTime_apex, 2);
-			this.gravity_scale = this.gravity_strength / Physics2D.gravity.y;
-			this.run_accelerationAmount = (50 * this.run_acceleration) / this.run_max;
-			this.run_deccelerationAmount = (50 * this.run_decceleration) / this.run_max;
+			this.gravity_scale = this.gravity_strength / Physics2D.gravity.magnitude;
+			this.gravity_direction = this.gravity_direction_default.normalized;
 			this.jump_force = Mathf.Abs(this.gravity_strength) * this.airTime_apex;
 
+			this.run_accelerationAmount = (50 * this.run_acceleration) / this.run_max;
+			this.run_deccelerationAmount = (50 * this.run_decceleration) / this.run_max;
 			this.run_acceleration = Mathf.Clamp(this.run_acceleration, 0.01f, this.run_max);
 			this.run_decceleration = Mathf.Clamp(this.run_decceleration, 0.01f, this.run_max);
-        }
+		}
 
-        private void OnEnable() {
-            this.inputManager.EventMove.AddListener(this.OnMove);
-            this.inputManager.EventJumpPress.AddListener(this.OnJumpPress);
-            this.inputManager.EventJumpRelease.AddListener(this.OnJumpRelease);
-            this.inputManager.EventLedgeGrabPress.AddListener(this.OnLedgeGrabPress);
-            this.inputManager.EventDashPress.AddListener(this.OnDashPress);
-            this.inputManager.EventSprintPress.AddListener(this.OnSprintPress);
-            this.inputManager.EventSprintRelease.AddListener(this.OnSprintRelease);
-        }
+		private void OnEnable() {
+			this.inputManager.EventMove.AddListener(this.OnMove);
+			this.inputManager.EventJumpPress.AddListener(this.OnJumpPress);
+			this.inputManager.EventJumpRelease.AddListener(this.OnJumpRelease);
+			this.inputManager.EventLedgeGrabPress.AddListener(this.OnLedgeGrabPress);
+			this.inputManager.EventDashPress.AddListener(this.OnDashPress);
+			this.inputManager.EventSprintPress.AddListener(this.OnSprintPress);
+			this.inputManager.EventSprintRelease.AddListener(this.OnSprintRelease);
+		}
 
-        private void OnDisable() {
-            this.inputManager.EventMove.RemoveListener(this.OnMove);
-            this.inputManager.EventJumpPress.RemoveListener(this.OnJumpPress);
-            this.inputManager.EventJumpRelease.RemoveListener(this.OnJumpRelease);
-            this.inputManager.EventLedgeGrabPress.RemoveListener(this.OnLedgeGrabPress);
-            this.inputManager.EventDashPress.RemoveListener(this.OnDashPress);
-            this.inputManager.EventSprintPress.RemoveListener(this.OnSprintPress);
-            this.inputManager.EventSprintRelease.RemoveListener(this.OnSprintRelease);
-        }
+		private void OnDisable() {
+			this.inputManager.EventMove.RemoveListener(this.OnMove);
+			this.inputManager.EventJumpPress.RemoveListener(this.OnJumpPress);
+			this.inputManager.EventJumpRelease.RemoveListener(this.OnJumpRelease);
+			this.inputManager.EventLedgeGrabPress.RemoveListener(this.OnLedgeGrabPress);
+			this.inputManager.EventDashPress.RemoveListener(this.OnDashPress);
+			this.inputManager.EventSprintPress.RemoveListener(this.OnSprintPress);
+			this.inputManager.EventSprintRelease.RemoveListener(this.OnSprintRelease);
+		}
 
-        void Start() {
+		void Start() {
 			this.dash_amountLeft = this.dash_amount;
 			this.jump_amountLeft = this.jump_amount;
 			this.stamina_amountLeft = this.stamina_amount;
 
-			this.rb.gravityScale = this.gravity_scale;
+			this.rb.gravityScale = 0; // Disable the default gravity
+			this.gravity_direction = this.gravity_direction_default.normalized;
 			this.debug_gravity_scaleMin = this.gravity_scale;
 			this.debug_gravity_scaleMax = this.gravity_scale;
 		}
@@ -212,7 +243,6 @@ namespace jmayberry.PlayerPhysics2D {
 			this.UpdateIsStates();
 			this.UpdateActions();
 			this.UpdateRefills();
-			this.UpdateGravity();
 
 			if (this.debugging) {
 				this.debug_gravity_scaleMin = Mathf.Min(this.debug_gravity_scaleMin, this.rb.gravityScale);
@@ -222,6 +252,8 @@ namespace jmayberry.PlayerPhysics2D {
 		}
 
 		void FixedUpdate() {
+			this.UpdateGravity();
+			//this.CheckSlope();
 			this.UpdateMovement();
 			this.UpdateFriction();
 
@@ -319,8 +351,7 @@ namespace jmayberry.PlayerPhysics2D {
 			this.is_onWall = !is_onGround && (this.wall_lastTimer > 0.01f);
 			this.is_onWallRight = !is_onGround && (this.wallRight_lastTimer > 0.01f);
 			this.is_onWallLeft = !is_onGround && (this.wallLeft_lastTimer > 0.01f);
-			this.is_falling = (this.rb.velocity.y < -0.01f);
-			this.is_wallJumping = (this.wallJump_startTime > 0.01f);
+			this.is_falling = Vector2.Dot(this.rb.velocity, this.gravity_direction) > 0.01f;
 			this.is_fallRecovering = (this.fallRecover_lastTimer > 0.01f);
 			this.is_diveFalling = (this.is_falling && (this.input_move.y < -0.01f));
 
@@ -330,7 +361,7 @@ namespace jmayberry.PlayerPhysics2D {
 					this.is_jumpFalling = true;
 				}
 
-				if (!this.is_fallRecoverNeeded && (this.rb.velocity.y < -this.fallRecover_threshold)) {
+				if (!this.is_fallRecoverNeeded && Vector2.Dot(this.rb.velocity, this.gravity_direction) > this.fallRecover_threshold) {
 					this.is_fallRecoverNeeded = true;
 				}
 			}
@@ -369,7 +400,7 @@ namespace jmayberry.PlayerPhysics2D {
 				this.is_exausted = false;
 			}
 
-			this.is_airTime = ((this.is_jumping || this.is_wallJumping || this.is_jumpFalling) && (Mathf.Abs(this.rb.velocity.y) < this.airTime_threshold));
+			this.is_airTime = ((this.is_jumping || this.is_wallJumping || this.is_jumpFalling) && Vector2.Dot(this.rb.velocity, this.gravity_direction) < this.airTime_threshold);
 
 			this.is_ledgeGrabbable = this.ledgeGrab.is_Detected;
 		}
@@ -404,26 +435,79 @@ namespace jmayberry.PlayerPhysics2D {
 		 * See: [Improve your Platformer's Jump](https://youtu.be/2S3g8CgBG1g?t=63)
 		 */
 		void UpdateGravity() {
-			if (this.is_dashAttacking || this.is_wallSliding) {
-				this.rb.gravityScale = 0;
+			this.rb.gravityScale = 0; // Ensure the default gravity is zero
+
+			float gravityMultiplier;
+			if (this.is_dashAttacking) {
+				gravityMultiplier = gravity_dashAttackMultiplier;
+			}
+			else if (this.is_wallSliding) {
+				gravityMultiplier = gravity_wallSlideMultiplier;
 			}
 			else if (this.is_diveFalling) {
-				this.rb.gravityScale = this.gravity_scale * this.gravity_diveMultiplier;
-				this.rb.velocity = new Vector2(this.rb.velocity.x, Mathf.Max(this.rb.velocity.y, -this.fallSpeed_dive));
+				gravityMultiplier = this.gravity_diveMultiplier;
+				this.rb.velocity = (Vector2)Vector3.ProjectOnPlane(this.rb.velocity, this.gravity_direction) + Vector2.ClampMagnitude(this.gravity_direction * this.fallSpeed_dive, -this.fallSpeed_dive);
 			}
 			else if (this.is_jumpCut) {
-				this.rb.gravityScale = this.gravity_scale * this.gravity_jumpCutMultiplier;
-				this.rb.velocity = new Vector2(this.rb.velocity.x, Mathf.Max(this.rb.velocity.y, -this.fallSpeed_jumpCut));
+				gravityMultiplier = this.gravity_jumpCutMultiplier;
+				this.rb.velocity = (Vector2)Vector3.ProjectOnPlane(this.rb.velocity, this.gravity_direction) + Vector2.ClampMagnitude(this.gravity_direction * this.fallSpeed_jumpCut, -this.fallSpeed_jumpCut);
 			}
 			else if (this.is_airTime) {
-				this.rb.gravityScale = this.gravity_scale * this.gravity_airTimeMultiplier;
+				gravityMultiplier = this.gravity_airTimeMultiplier;
 			}
 			else if (this.is_falling) {
-				this.rb.gravityScale = this.gravity_scale * this.gravity_fallMultiplier;
-				this.rb.velocity = new Vector2(this.rb.velocity.x, Mathf.Max(this.rb.velocity.y, -this.fallSpeed_normal));
+				gravityMultiplier = this.gravity_fallMultiplier;
+				this.rb.velocity = (Vector2)Vector3.ProjectOnPlane(this.rb.velocity, this.gravity_direction) + Vector2.ClampMagnitude(this.gravity_direction * this.fallSpeed_normal, -this.fallSpeed_normal);
 			}
 			else {
-				this.rb.gravityScale = this.gravity_scale;
+				gravityMultiplier = this.gravity_strength;
+			}
+
+			Vector2 gravityForce = this.gravity_direction * gravityMultiplier * Time.fixedDeltaTime;
+			this.rb.AddForce(gravityForce, ForceMode2D.Force);
+		}
+
+		/**
+		 * Allows the player to walk up slopes that are not 'too steep'.
+		 */
+		void CheckSlope() {
+			RaycastHit2D hitCenter = Physics2D.Raycast(this.ground_checkPosition.position, Vector2.down, this.slope_detectionRadius, GameManager.instance.groundLayer);
+			RaycastHit2D hitLeft = Physics2D.Raycast(this.ground_checkPosition.position + new Vector3(-this.slope_detectionRadius, 0, 0), Vector2.down, this.slope_detectionRadius, GameManager.instance.groundLayer);
+			RaycastHit2D hitRight = Physics2D.Raycast(this.ground_checkPosition.position + new Vector3(this.slope_detectionRadius, 0, 0), Vector2.down, this.slope_detectionRadius, GameManager.instance.groundLayer);
+
+			RaycastHit2D hit = hitCenter;
+
+			if (hitLeft.collider != null && (hit.collider == null || hitLeft.distance < hit.distance)) {
+				hit = hitLeft;
+			}
+			if (hitRight.collider != null && (hit.collider == null || hitRight.distance < hit.distance)) {
+				hit = hitRight;
+			}
+
+			if (!hit) {
+				this.is_slope_sliding = false;
+				this.slope_normal = Vector2.up;
+				this.slope_direction = Vector2.zero;
+				return;
+			}
+
+			float angle = Vector2.Angle(Vector2.up, hit.normal);
+			this.slope_normal = hit.normal;
+			this.is_slope_sliding = (angle > this.slope_maxAngle);
+
+			if (!is_slope_sliding) {
+				float move_direction;
+				if (this.animationManager.is_notMoving) {
+					move_direction = (this.animationManager.is_facingRight) ? 1 : -1;
+				}
+				else {
+					move_direction = Mathf.Sign(this.input_move.x);
+				}
+
+				this.slope_direction = Vector2.Perpendicular(this.slope_normal).normalized * -move_direction;
+			}
+			else {
+				this.slope_direction = Vector2.zero;
 			}
 		}
 
@@ -533,6 +617,10 @@ namespace jmayberry.PlayerPhysics2D {
 					amount *= this.dash_dragMultiplier;
 				}
 			}
+			//else if (this.is_slope_sliding) {
+			//	//amount = this.speed_friction * this.slope_frictionMultiplier;
+			//	return;
+   //         }
 			else if (this.animationManager.is_notMoving) {
 				amount = this.speed_friction;
 			}
@@ -647,10 +735,10 @@ namespace jmayberry.PlayerPhysics2D {
 
 			float force = this.jump_force;
 			if (this.is_falling) {
-				force -= this.rb.velocity.y;
+				force -= Vector2.Dot(this.rb.velocity, this.gravity_direction);
 			}
 
-			this.rb.AddForce(force * Vector2.up, ForceMode2D.Impulse);
+			this.rb.AddForce(-this.gravity_direction * force, ForceMode2D.Impulse);
 		}
 
 		/**

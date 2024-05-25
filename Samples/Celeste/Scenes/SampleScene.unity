@@ -326,7 +326,7 @@ Transform:
   m_GameObject: {fileID: 618119320}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.72, y: 3.72, z: 0}
+  m_LocalPosition: {x: 16.57, y: -0.35, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -390,7 +390,7 @@ MonoBehaviour:
   debugging: 1
   inputManager: {fileID: 1204429379}
   animationManager: {fileID: 697558787}
-  speed_friction: 0
+  speed_friction: 0.03
   speed_drag: 0
   ground_checkSize: {x: 0.49, y: 0.03}
   ground_checkPosition: {fileID: 150839617}
@@ -415,6 +415,8 @@ MonoBehaviour:
   is_fallRecovering: 0
   is_diveFalling: 0
   is_jumpFalling: 0
+  gravity_direction_default: {x: 0, y: -1}
+  gravity_direction: {x: 0, y: 0}
   run_max: 11
   run_acceleration: 2.5
   run_decceleration: 5
@@ -430,6 +432,11 @@ MonoBehaviour:
   sprint_deccelerationMultiplier: 2
   sprint_graceTime: 0.1
   is_sprinting: 0
+  slope_maxAngle: 45
+  slope_detectionRadius: 0.5
+  is_slope_sliding: 0
+  slope_normal: {x: 0, y: 0}
+  slope_direction: {x: 0, y: 0}
   jump_height: 3.5
   airTime_apex: 0.3
   airTime_threshold: 1
@@ -669,6 +676,7 @@ MonoBehaviour:
   inputManager: {fileID: 1204429379}
   is_movingRight: 1
   is_facingRight: 1
+  is_notMoving: 1
 --- !u!1 &765362580
 GameObject:
   m_ObjectHideFlags: 0
@@ -780,6 +788,7 @@ MonoBehaviour:
   inputManager: {fileID: 1204429379}
   is_movingRight: 1
   is_facingRight: 1
+  is_notMoving: 1
 --- !u!1 &1002257630
 GameObject:
   m_ObjectHideFlags: 0
@@ -954,11 +963,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701240684944689126, guid: be97db47fc5b7ee419045e517d8cd271, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.72
+      value: 16.57
       objectReference: {fileID: 0}
     - target: {fileID: 701240684944689126, guid: be97db47fc5b7ee419045e517d8cd271, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 7.02
+      value: 2.95
       objectReference: {fileID: 0}
     - target: {fileID: 3574252076706377894, guid: be97db47fc5b7ee419045e517d8cd271, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1002,11 +1011,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3776248688462237091, guid: be97db47fc5b7ee419045e517d8cd271, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.72
+      value: 16.57
       objectReference: {fileID: 0}
     - target: {fileID: 3776248688462237091, guid: be97db47fc5b7ee419045e517d8cd271, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 7.02
+      value: 2.95
       objectReference: {fileID: 0}
     - target: {fileID: 3997088463943625076, guid: be97db47fc5b7ee419045e517d8cd271, type: 3}
       propertyPath: m_Follow
@@ -1101,9 +1110,9 @@ EdgeCollider2D:
   - {x: 2.5846379, y: -1.8012099}
   - {x: 8.12378, y: -1.8012102}
   - {x: 8.101086, y: -2.8873086}
-  - {x: 11.587139, y: -2.929215}
-  - {x: 11.611462, y: 2.5174253}
-  - {x: 17.006805, y: -2.8777227}
+  - {x: 11.430016, y: -2.9272065}
+  - {x: 9.821977, y: 0.3068836}
+  - {x: 16.956585, y: -2.8774924}
   - {x: 20.536118, y: -2.893914}
   - {x: 20.696466, y: 4.9407644}
   - {x: 20.657587, y: 6.114494}
@@ -1246,7 +1255,7 @@ MonoBehaviour:
       spriteIndex: 0
       corner: 1
       m_CornerMode: 1
-    - position: {x: 11.858781, y: 1.9166906, z: 0}
+    - position: {x: 10.355784, y: -0.20518756, z: 0}
       leftTangent: {x: 0, y: 0, z: 0}
       rightTangent: {x: 0, y: 0, z: 0}
       mode: 0
@@ -1345,9 +1354,9 @@ MonoBehaviour:
   - {x: 2.5846379, y: -1.8012099}
   - {x: 8.12378, y: -1.8012102}
   - {x: 8.101086, y: -2.8873086}
-  - {x: 11.587139, y: -2.929215}
-  - {x: 11.611462, y: 2.5174253}
-  - {x: 17.006805, y: -2.8777227}
+  - {x: 11.430016, y: -2.9272065}
+  - {x: 9.821977, y: 0.3068836}
+  - {x: 16.956585, y: -2.8774924}
   - {x: 20.536118, y: -2.893914}
   - {x: 20.696466, y: 4.9407644}
   - {x: 20.657587, y: 6.114494}
@@ -2068,7 +2077,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4793058610230200667, guid: 3ce1614a8e3e4fd4a8e256984a9ca129, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
