@@ -3,7 +3,8 @@
     "rootNamespace": "jmayberry.PlayerPhysics2D.Editor",
     "references": [
         "jmayberry.PlayerPhysics2D",
-        "jmayberry.CustomAttributes"
+        "jmayberry.CustomAttributes",
+        "jmayberry.SceneTransitions.Editor"
     ],
     "includePlatforms": [
         "Editor"

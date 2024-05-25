@@ -17,7 +17,7 @@ namespace jmayberry.PlayerPhysics2D {
 		[Required] [SerializeField] private PlayerAnimationHandler animationManager;
 
 		[Header("Environment")]
-		[InspectorRename("Friction")][Range(0, 0.25f)] public float speed_friction = 0.0f;
+		[InspectorRename("Friction")][Range(0, 0.25f)] public float speed_friction = 0.03f;
 		[InspectorRename("Drag")][Range(0, 0.025f)] public float speed_drag = 0f;
 		[InspectorRename("Ground Check Size")] public Vector2 ground_checkSize = new Vector2(0.49f, 0.03f);
 		[InspectorRename("Ground Check Position")][Required] public Transform ground_checkPosition;
@@ -142,7 +142,10 @@ namespace jmayberry.PlayerPhysics2D {
 		[InspectorRename("Is Stamina Refilling")][Readonly] public bool is_staminaRefilling;
 		[InspectorRename("Is Exausted")][Readonly] public bool is_exausted;
 
-		float wallJump_startTime;
+		[Header("Debug")]
+        [InspectorRename("Show Gizmo: wall")] public bool showGizmos_ground = false;
+        [InspectorRename("Show Gizmo: Ground")] public bool showGizmos_wall = false;
+        float wallJump_startTime;
 		float ledgeGrab_startTime;
 		float wall_lastTimer;
 		float wallRight_lastTimer;
@@ -160,10 +163,16 @@ namespace jmayberry.PlayerPhysics2D {
 		float run_deccelerationAmount;
 
 		void OnDrawGizmos() {
-			// Gizmos.color = Color.red;
-			// Gizmos.DrawWireCube(this.ground_checkPosition.position, this.ground_checkSize);
-			// Gizmos.DrawWireCube(this.wall_checkPosition.position, this.wall_checkSize);
-		}
+			if (this.showGizmos_ground) {
+				Gizmos.color = Color.red;
+				Gizmos.DrawWireCube(this.ground_checkPosition.position, this.ground_checkSize);
+			}
+
+			if (showGizmos_wall) {
+				Gizmos.color = Color.blue;
+				Gizmos.DrawWireCube(this.wall_checkPosition.position, this.wall_checkSize);
+			}
+        }
 
 		// Runs when the inspector window is updated
 		void OnValidate() {
